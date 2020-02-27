@@ -1,0 +1,14 @@
+{
+    "name": "eugene/test_11.02.2020",
+    "type": "project",
+    "authors": [
+        {
+            "name": "EugeneGpil",
+            "email": "gpilligrim@gmail.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": { "App\\": "app" }
+    }
+}

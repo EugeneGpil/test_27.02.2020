@@ -1,0 +1,9 @@
+.add-user-role-form__error {
+    color: red;
+}
+
+.users-list__table-row{
+    display: flex;
+    width: 300px;
+    justify-content: space-between;
+}
