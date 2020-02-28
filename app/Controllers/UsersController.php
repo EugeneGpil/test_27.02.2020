@@ -70,18 +70,20 @@ class UsersController
         }
         
         $usersObj = new User();
-        $users = $usersObj->getUsers($page);
+        $users = $usersObj->getUsersWithRolesByPage($page);
 
-        $rolesObj = new UserRole();
-        $roles = $rolesObj->getAll();
+        // $rolesObj = new UserRole();
+        // $roles = $rolesObj->getAll();
 
-        $resultData = [];
-        foreach ($users as $user) {
-            $resultData["users"][] = [
-                "username" => $user["username"],
-                "role" => $this->getById($roles, $user["role_id"])["role"] ?? ""
-            ];
-        }
+        // $resultData = [];
+        // foreach ($users as $user) {
+        //     $resultData["users"][] = [
+        //         "username" => $user["username"],
+        //         "role" => $this->getById($roles, $user["role_id"])["role"] ?? ""
+        //     ];
+        // }
+
+        $resultData["users"] = $users;
         
         $resultData["currentPage"] = $page;
 
