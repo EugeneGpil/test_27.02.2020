@@ -52,7 +52,8 @@ class Routes
 
         foreach (self::ROUTES as $route) {
             if (
-                (strpos($url, $route["url"]) === 0  && $route["method"] == $method && $route["url"] != "/")
+                (($url == $route["url"] || strpos($url . "/", $route["url"]) === 0) 
+                    && $route["method"] == $method && $route["url"] != "/")
                 || ($route["url"] == "/" && $url == "/" && $route["method"] == $method)
             ) {
                 $requestData = self::getRequest($url, $route["url"], $method);

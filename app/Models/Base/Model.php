@@ -7,7 +7,7 @@ use \App\Config;
 
 abstract class Model
 {
-    protected $tabelName;
+    protected $tableName;
     protected $columnNames;
     protected $rowsPerPage;
     protected static $DB = null;
@@ -51,7 +51,8 @@ abstract class Model
         return self::$DB[$param];
     }
 
-    public function getRowsPerPage() {
+    public function getRowsPerPage()
+    {
         if (isset($this->rowsPerPage)) {
             return $this->rowsPerPage;
         }
@@ -131,16 +132,28 @@ abstract class Model
         return true;
     }
 
-    public function getPage($columns, int $pageNumber) {
+    public function getPageWithRelations($columns, $relationClass, $relationColumns, int $pageNumber)
+    {
         if ($pageNumber <= 0) {
             $pageNumber = 1;
+        }
+
+        $className = "\\App\\Models\\" . $relationClass;
+        $relationTableObj = new $className();
+
+        if (
+            !in_array($relationTableObj->tableName, self::TABLE_NAMES)
+            || !in_array($this->tableName, self::TABLE_NAMES)
+        ) {
+            return [];
         }
 
         $columnsStr = "";
 
         $firstIteration = true;
-        foreach ($columns as $column) {
-            if (!in_array($column, $this->columnNames)) {
+        foreach ($columns as $tableColumnWithDot) {
+
+            if (!$this->isTableAndColumnWithDotAllowed($tableColumnWithDot, $relationTableObj)) {
                 return [];
             }
 
@@ -150,13 +163,52 @@ abstract class Model
                 $columnsStr = $columnsStr . ", ";
             }
 
-            $columnsStr = $columnsStr . "`" . $column . "`";
+            $columnsStr = $columnsStr . $this->getBacktickedTableColumn($tableColumnWithDot);
+        }
+
+        foreach ($relationColumns as $tableAndColumnWithDot) {
+            if (!$this->isTableAndColumnWithDotAllowed($tableAndColumnWithDot, $relationTableObj)) {
+                return [];
+            }
         }
 
         $request = $this->getDB()->query("
-            SELECT " . $columnsStr . " FROM `" . $this->tableName . "` LIMIT "
-                . (int) $this->rowsPerPage . " OFFSET " . (int) (($pageNumber - 1) * $this->rowsPerPage)
+            SELECT " . $columnsStr . "
+            FROM `" . $this->tableName . "`
+            LEFT JOIN `" . $relationTableObj->tableName . "`
+            ON " . $this->getBacktickedTableColumn($relationColumns[0]) . "
+             = " . $this->getBacktickedTableColumn($relationColumns[1]) . "
+            LIMIT " . (int) $this->rowsPerPage . "
+            OFFSET " . (int) (($pageNumber - 1) * $this->rowsPerPage)
         );
         return $request->fetchAll();
+    }
+
+    private function getBacktickedTableColumn($tableAndColumnWithDot) {
+        [$tableName, $columnName] = $this->getTableAndColumn($tableAndColumnWithDot);
+        return "`" . $tableName . "`.`" . $columnName . "`";
+    }
+
+    private function isTableAndColumnWithDotAllowed($tableAndColumnWithDot, $relationObj)
+    {
+        [$tableName, $columnName] = $this->getTableAndColumn($tableAndColumnWithDot);
+        if (
+            !(in_array($columnName, $this->columnNames)
+            || in_array($columnName, $relationObj->columnNames))
+            || !in_array($tableName, self::TABLE_NAMES)
+        ) {
+            return false;
+        }
+        return true;
+    }
+
+    private function getTableAndColumn($tableColumnStr) {
+        $dotPos = strpos($tableColumnStr, ".");
+        $tableName = substr($tableColumnStr, 0, $dotPos);
+        $columnName = substr($tableColumnStr, $dotPos + 1);
+        return [
+            $tableName,
+            $columnName
+        ];
     }
 }

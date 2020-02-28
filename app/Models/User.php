@@ -19,11 +19,13 @@ class User extends Model
         ];
     }
 
-    public function getUsers($page)
+    public function getUsersWithRolesByPage($page)
     {
-        return $this->getPage([
-            "username",
-            "role_id"
-        ], $page);
+        return $this->getPageWithRelations(
+            ["user.username", "user_role.role"],
+            "UserRole",
+            ["user.role_id", "user_role.id"],
+            $page
+        );
     }
 }
